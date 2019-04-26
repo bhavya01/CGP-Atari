@@ -6,13 +6,13 @@ import copy
 
 # parameters of cartesian genetic programming
 MUT_PB = 0.015  # mutate probability
-N_COLS = 500   # number of cols (nodes) in a single-row CGP
-LEVEL_BACK = 500  # how many levels back are allowed for inputs in CGP
+N_COLS = 1000   # number of cols (nodes) in a single-row CGP
+LEVEL_BACK = 1000  # how many levels back are allowed for inputs in CGP
 
 # parameters of evolutionary strategy: MU+LAMBDA
 MU = 2
 LAMBDA = 8
-N_GEN = 4  # max number of generations
+N_GEN = 100  # max number of generations
 
 # if True, then additional information will be printed
 VERBOSE = False
@@ -154,8 +154,11 @@ def protected_div(a, b):
         return a
     return a / b
 
+def abs_sqrt(a):
+	return math.sqrt(abs(a))
 
 fs = [Function(op.add, 2), Function(op.sub, 2), Function(op.mul, 2), Function(protected_div, 2), Function(op.neg, 1)]
+
 Individual.function_set = fs
 Individual.max_arity = max(f.arity for f in fs)
 
@@ -167,7 +170,7 @@ def evolve(pop, fitness, mut_rate, mu, lambda_):
     :param mut_rate: mutation rate
     :return: a new generation of individuals of the same size
     """
-    pop = [x for _,x in sorted(zip(fitness, pop))]
+    pop = [x for _,x in sorted(zip(fitness, pop), key=lambda x: x[0])]
     parents = pop[-mu:]
     # generate lambda new children via mutation
     offspring = []
