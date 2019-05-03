@@ -3,6 +3,7 @@ import atari_cgp as cgp
 import gym
 import pickle
 import sys
+import time
 
 
 POP_SIZE = cgp.MU + cgp.LAMBDA
@@ -65,7 +66,8 @@ def run_episode(env, genome ,render = False):
 
   while not done:
     if render:
-      env.render()
+      env.render(mode="human")
+      time.sleep(0.1)
 
     if step > steps_limit:
       action = NULL_ACTION
@@ -91,7 +93,7 @@ if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
     env.seed(RNG_SEED)
     prev_obs = env.reset()
-    env.render()
+    env.render(mode="human")
     treward = 0
 
     def key(event):
@@ -118,7 +120,7 @@ if __name__ == "__main__":
       treward += reward
       prev_obs = obs
 
-      env.render()
+      env.render(mode="human")
       
       if done:
         root.destroy()
@@ -135,4 +137,5 @@ if __name__ == "__main__":
     with open('best.pkl', 'rb') as handle:
       genome = pickle.load(handle)
       env = gym.make("LunarLander-v2")
-      run_episode(env, genome, True)
+      reward = run_episode(env, genome, True)
+      print("episode reward is : " + str(reward))
