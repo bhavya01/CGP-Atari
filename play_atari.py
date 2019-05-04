@@ -2,7 +2,9 @@ import gym
 import pygame
 import matplotlib
 import argparse
+import csv
 from gym import logger
+import numpy as np
 try:
     matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
@@ -13,6 +15,17 @@ except ImportError as e:
 from collections import deque
 from pygame.locals import VIDEORESIZE
 
+
+
+def prepro(I):
+  """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
+  I = I[35:195] # crop
+  I = I[::2,::2,0] # downsample by factor of 2
+  I[I == 144] = 0 # erase background (background type 1)
+  I[I == 109] = 0 # erase background (background type 2)
+  I[I != 0] = 1 # everything else (paddles, ball) just set to 1
+  return I.astype(np.float).ravel()
+
 def display_arr(screen, arr, video_size, transpose):
     arr_min, arr_max = arr.min(), arr.max()
     arr = 255.0 * (arr - arr_min) / (arr_max - arr_min)
@@ -20,7 +33,7 @@ def display_arr(screen, arr, video_size, transpose):
     pyg_img = pygame.transform.scale(pyg_img, video_size)
     screen.blit(pyg_img, (0,0))
 
-def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=None):
+def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=None, csvwriter = None):
     """Allows one to play the game using keyboard.
     To simply play the game use:
         play(gym.make("Pong-v4"))
@@ -99,6 +112,8 @@ def play(env, transpose=True, fps=30, zoom=None, callback=None, keys_to_action=N
         else:
             action = keys_to_action.get(tuple(sorted(pressed_keys)), 0)
             prev_obs = obs
+            if csvwriter is not None:
+                csvwriter.writerow(list(prepro(obs))+[action])
             obs, rew, env_done, info = env.step(action)
             if callback is not None:
                 callback(prev_obs, obs, action, rew, env_done, info)
@@ -164,9 +179,13 @@ class PlayPlot(object):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str, default='PongNoFrameskip-v0', help='Define Environment')
+
+    csvfile = open('game.csv', 'wb')
+    csvwriter = csv.writer(csvfile, delimiter=' ')
     args = parser.parse_args()
     env = gym.make(args.env)
-    play(env, zoom=4, fps=30)
+    play(env, zoom=2, fps=30,csvwriter=csvwriter)
+    csvfile.close()
 
 
 if __name__ == '__main__':
